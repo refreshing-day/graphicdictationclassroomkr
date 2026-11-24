@@ -1,0 +1,250 @@
+<!doctype html>
+<html lang="ko"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>화살표 따라그리기</title>
+<style>
+:root{--bg:#eef3fb;--card:#fff;--ink:#1c2538;--mute:#667391;--line:#c4d6ee;--acc:#2a62d6;--tint:#e3edff;--red:#e5334b;--ok:#17925c;--pen:#1c2538;
+box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);color-scheme:light}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#10141d;--card:#1a2130;--ink:#e8ecf5;--mute:#9aa6bd;--line:#2c3c58;--acc:#7aa5ff;--tint:#25334f;--red:#ff6178;--ok:#4cd694;--pen:#e8ecf5;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#10141d;--card:#1a2130;--ink:#e8ecf5;--mute:#9aa6bd;--line:#2c3c58;--acc:#7aa5ff;--tint:#25334f;--red:#ff6178;--ok:#4cd694;--pen:#e8ecf5;color-scheme:dark}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--bg);color:var(--ink);font-family:system-ui,-apple-system,"Apple SD Gothic Neo","Malgun Gothic","Noto Sans KR",sans-serif;line-height:1.5}
+#app{max-width:520px;margin:0 auto;padding:14px 14px 40px}
+h1{font-size:1.25rem;margin:0}
+header{display:flex;align-items:center;gap:10px;margin-bottom:12px}
+button,select,input[type=text]{font:inherit;color:var(--ink)}
+button{border:1px solid var(--line);background:var(--card);padding:8px 14px;border-radius:10px;cursor:pointer}
+button:hover{border-color:var(--acc)}
+button:focus-visible,select:focus-visible,input:focus-visible{outline:2px solid var(--acc);outline-offset:2px}
+button.pri{background:var(--acc);border-color:var(--acc);color:#fff}
+button.ghost{background:none;border-color:transparent;color:var(--mute);padding:6px 8px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:10px;margin-bottom:10px}
+.bar,.row{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:10px}
+select,input[type=text]{border:1px solid var(--line);background:var(--card);border-radius:10px;padding:8px 10px;flex:1;min-width:0}
+.chk{display:flex;gap:6px;align-items:center;color:var(--mute);font-size:.9rem}
+.chips{display:flex;flex-wrap:wrap;gap:6px;min-height:34px}
+.chip{min-width:48px;padding:3px 9px;border:1px solid var(--line);border-radius:8px;font-weight:700;font-size:1.05rem;text-align:center}
+.chip small{display:block;font-size:.65rem;font-weight:500;color:var(--mute);line-height:1}
+.chip.done{opacity:.38;text-decoration:line-through}
+.chip.cur{border-color:var(--acc);background:var(--tint);color:var(--acc)}
+#stage svg{display:block;width:100%;height:auto;touch-action:manipulation}
+.gl line{stroke:var(--line);stroke-width:1}
+.msg{min-height:1.5em;margin:0 2px 10px;color:var(--mute);font-size:.92rem}
+.pad{display:grid;grid-template-columns:repeat(3,64px);gap:6px;justify-content:center;margin:4px 0 12px}
+.pad button{height:54px;font-size:1.4rem;padding:0}
+.hint{color:var(--mute);font-size:.88rem;margin:0 2px 10px}
+.hero{padding:34px 4px 22px}
+.hero h1{font-size:1.7rem;margin:8px 0}
+.hero p{color:var(--mute);margin:0}
+.big{display:block;width:100%;text-align:left;padding:18px;margin-bottom:12px;font-size:1.15rem;font-weight:700;border-radius:14px}
+.big small{display:block;font-weight:400;opacity:.85;font-size:.88rem;margin-top:2px}
+.list{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
+.pc{display:flex;flex-direction:column;align-items:center;gap:2px;padding:12px;text-align:center}
+.th{display:grid;place-items:center;width:100%;aspect-ratio:1;font-size:2.4rem;color:var(--line);font-weight:700}
+.th svg{width:100%;height:100%}
+.pc .hint{margin:0}
+.sw{width:32px;height:32px;border-radius:50%;padding:0;border:2px solid var(--line)}
+.sw.on{border-color:var(--acc);outline:2px solid var(--acc);outline-offset:2px}
+textarea{width:100%;min-height:70px;border:1px solid var(--line);background:var(--card);color:var(--ink);border-radius:10px;padding:8px;font:inherit}
+#out img{width:100%;border-radius:8px;border:1px solid var(--line);background:#fff}
+.shake{animation:sh .25s}
+@keyframes sh{25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}
+@media (prefers-reduced-motion:reduce){.shake{animation:none;outline:2px solid var(--red)}}
+</style></head>
+<body><div id="app"></div>
+<script>
+const A=['→','↘','↓','↙','←','↖','↑','↗'];
+const D=[[1,0],[1,1],[0,1],[-1,1],[-1,0],[-1,-1],[0,-1],[1,-1]];
+const C=30,KEY='arrowdraw:custom';
+const BUILT=[
+{name:'집',start:[2,6],moves:[[4,0],[3,6],[2,5],[2,3],[3,2]]},
+{name:'하트',start:[5,8],moves:[[3,5],[2,6],[1,7],[1,0],[1,1],[1,7],[1,0],[1,1],[2,2],[3,3]]},
+V('돛단배',[[0,10],[16,10],[13,13],[3,13],[0,10],[8,10],[8,0],[6,2],[8,2],[8,3],[3,8],[8,8],[8,1],[14,7],[14,9],[8,9]]),
+V('보석',[[3,0],[9,0],[12,3],[0,3],[3,0],[6,3],[9,0],[6,3],[6,9],[0,3],[6,9],[12,3]]),
+V('물고기',[[2,6],[3,6],[4,5],[5,6],[4,7],[3,6],[2,6],[5,3],[6,3],[8,1],[10,3],[13,6],[16,3],[16,9],[13,6],[10,9],[10,11],[8,9],[5,9],[2,6]]),
+V('로켓',[[8,0],[11,3],[11,11],[14,14],[14,17],[11,14],[10,15],[6,15],[5,14],[2,17],[2,14],[5,11],[5,3],[8,0],[8,5],[10,7],[8,9],[6,7],[8,5]]),
+V('고양이',[[8,12],[8,9],[7,8],[9,8],[8,9],[8,12],[11,12],[14,9],[14,1],[11,4],[11,6],[10,7],[11,8],[12,7],[11,6],[11,4],[5,4],[5,6],[4,7],[5,8],[6,7],[5,6],[5,4],[2,1],[2,9],[5,12],[8,12]]),
+V('성',[[0,14],[0,3],[1,3],[1,4],[2,4],[2,3],[3,3],[3,4],[4,4],[4,3],[5,3],[5,7],[8,7],[8,1],[10,3],[8,5],[8,7],[11,7],[11,3],[12,3],[12,4],[13,4],[13,3],[14,3],[14,4],[15,4],[15,3],[16,3],[16,14],[10,14],[10,11],[9,10],[7,10],[6,11],[6,14],[0,14]])
+];
+function V(name,v){const m=[];for(let i=1;i<v.length;i++){const dx=v[i][0]-v[i-1][0],dy=v[i][1]-v[i-1][1],d=D.findIndex(q=>q[0]===Math.sign(dx)&&q[1]===Math.sign(dy)),n=Math.max(Math.abs(dx),Math.abs(dy));if(m.length&&m[m.length-1][1]===d)m[m.length-1][0]+=n;else m.push([n,d])}return{name,start:v[0].slice(),moves:m}}
+const $=id=>document.getElementById(id),app=$('app');
+const esc=s=>s.replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+function load(){try{return JSON.parse(localStorage.getItem(KEY)||'[]')}catch(e){return[]}}
+function store(l){try{localStorage.setItem(KEY,JSON.stringify(l))}catch(e){}}
+const all=()=>BUILT.concat(load());
+const S={scr:'menu',pi:0,n:0,hint:false};
+let M={start:null,steps:[]};
+const BOX={x0:0,y0:0,x1:12,y1:12};
+
+function build(p){const steps=[];p.moves.forEach(([c,d])=>{for(let i=0;i<c;i++)steps.push(d)});
+ const pts=[p.start.slice()];steps.forEach(d=>{const l=pts[pts.length-1];pts.push([l[0]+D[d][0],l[1]+D[d][1]])});return{steps,pts}}
+function group(steps){const m=[];steps.forEach(d=>{const l=m[m.length-1];if(l&&l[1]===d)l[0]++;else m.push([1,d])});return m}
+function bounds(pts){const xs=pts.map(p=>p[0]),ys=pts.map(p=>p[1]);
+ let x0=Math.min(...xs)-1,x1=Math.max(...xs)+1,y0=Math.min(...ys)-1,y1=Math.max(...ys)+1;
+ while(x1-x0<10){x0--;x1++}while(y1-y0<10){y0--;y1++}return{x0,x1,y0,y1}}
+const px=(b,x)=>(x-b.x0)*C,py=(b,y)=>(y-b.y0)*C;
+function gridSVG(b,inner){const W=(b.x1-b.x0)*C,H=(b.y1-b.y0)*C;let g='';
+ for(let x=b.x0;x<=b.x1;x++)g+=`<line x1="${px(b,x)}" y1="0" x2="${px(b,x)}" y2="${H}"/>`;
+ for(let y=b.y0;y<=b.y1;y++)g+=`<line x1="0" y1="${py(b,y)}" x2="${W}" y2="${py(b,y)}"/>`;
+ return `<svg id="sv" viewBox="-6 -6 ${W+12} ${H+12}"><g class="gl">${g}</g>${inner}</svg>`}
+const poly=(b,a,extra)=>`<polyline points="${a.map(q=>px(b,q[0])+','+py(b,q[1])).join(' ')}" fill="none" stroke-linecap="round" stroke-linejoin="round" ${extra}/>`;
+function chips(moves,n){let c=0;return moves.map(([k,d])=>{const s=c;c+=k;const cls=n>=c?'done':n>=s?'cur':'';
+ return `<span class="chip ${cls}">${k}${A[d]}${cls==='cur'&&n>s?`<small>${n-s}/${k}</small>`:''}</span>`}).join('')}
+function padHtml(){return '<div class="pad">'+[5,6,7,4,-1,0,3,2,1].map(d=>d<0?'<span></span>':`<button onclick="go(${d})" aria-label="${A[d]}">${A[d]}</button>`).join('')+'</div>'}
+
+function menu(){S.scr='menu';
+ app.innerHTML=`<div class="hero"><div style="font-size:2.4rem">✏️</div><h1>화살표 따라그리기</h1><p>화살표 지시대로 모눈종이에 선을 이으면 그림이 나타나요.</p></div>
+ <button class="big pri" onclick="showList()">따라그리기<small>여러 문제 중에 골라서 화살표 지시를 따라 그려요</small></button>
+ <button class="big" onclick="showMake()">문제 만들기<small>직접 그려서 나만의 화살표 문제를 만들어요</small></button>
+ <button class="big" onclick="showFree()">자유 그리기<small>빈 모눈종이에 마음대로 그려요</small></button>`}
+
+const DK='arrowdraw:done';
+function doneSet(){try{return JSON.parse(localStorage.getItem(DK)||'[]')}catch(e){return[]}}
+function markDone(n){const s=doneSet();if(!s.includes(n)){s.push(n);try{localStorage.setItem(DK,JSON.stringify(s))}catch(e){}}}
+const lvl=p=>p.moves.length<9?'쉬움':p.moves.length<16?'보통':'어려움';
+function thumb(p){const pts=build(p).pts,xs=pts.map(q=>q[0]),ys=pts.map(q=>q[1]),x0=Math.min(...xs)-1,y0=Math.min(...ys)-1,w=Math.max(...xs)-x0+1,h=Math.max(...ys)-y0+1;
+ return `<svg viewBox="0 0 ${w} ${h}"><polyline points="${pts.map(q=>(q[0]-x0)+','+(q[1]-y0)).join(' ')}" fill="none" stroke="var(--pen)" stroke-width=".2" stroke-linecap="round" stroke-linejoin="round"/></svg>`}
+function showList(){S.scr='list';const L=all(),dn=doneSet();
+ app.innerHTML=`<header><button class="ghost" onclick="menu()">← 처음으로</button><h1>문제 고르기</h1></header>
+ <p class="hint">${L.filter(p=>dn.includes(p.name)).length}/${L.length} 완성 · 완성하면 그림이 공개돼요.</p>
+ <div class="list">${L.map((p,i)=>{const ok=dn.includes(p.name);return `<button class="pc" onclick="S.pi=${i};showPlay()"><span class="th">${ok?thumb(p):'?'}</span><b>${esc(p.name)}</b><span class="hint">${lvl(p)} · ${build(p).steps.length}칸${i>=BUILT.length?' · 내 문제':''}${ok?' ✓':''}</span></button>`}).join('')}</div>`}
+function nextP(){S.pi=(S.pi+1)%all().length;showPlay()}
+function showPlay(){S.scr='play';S.n=0;const L=all();if(S.pi>=L.length)S.pi=0;
+ app.innerHTML=`<header><button class="ghost" onclick="showList()">← 문제 목록</button><h1>${esc(L[S.pi].name)}</h1></header>
+ <div class="bar"><select id="sel" onchange="S.pi=+this.value;S.n=0;showPlay()" aria-label="문제 선택">${L.map((p,i)=>`<option value="${i}" ${i===S.pi?'selected':''}>${esc(p.name)}</option>`).join('')}</select>
+ <label class="chk"><input type="checkbox" id="hint" ${S.hint?'checked':''} onchange="S.hint=this.checked;upd()">정답 힌트</label></div>
+ <div class="card"><div class="chips" id="chips"></div></div>
+ <div class="card" id="stage"></div><div class="msg" id="msg"></div>${padHtml()}
+ <div class="row"><button onclick="undo()">되돌리기</button><button onclick="S.n=0;upd()">다시 시작</button>
+ ${S.pi>=BUILT.length?'<button class="ghost" onclick="delP()">이 문제 삭제</button>':''}</div>
+ <p class="hint">방향키로 한 칸씩 이동해요. 대각선은 Q ↖ · E ↗ · Z ↙ · C ↘ 또는 방향키 두 개를 동시에 누르세요.</p>`;upd()}
+function upd(){const p=all()[S.pi],{steps,pts}=build(p),b=bounds(pts),n=S.n,done=n===steps.length;
+ $('chips').innerHTML=chips(p.moves,n);
+ let h=S.hint?poly(b,pts,'stroke="var(--line)" stroke-width="6" opacity=".9"'):'';
+ h+=poly(b,pts.slice(0,n+1),'stroke="var(--pen)" stroke-width="3"');
+ h+=`<circle cx="${px(b,pts[0][0])}" cy="${py(b,pts[0][1])}" r="6" fill="var(--red)"/>`;
+ if(!done)h+=`<circle cx="${px(b,pts[n][0])}" cy="${py(b,pts[n][1])}" r="8" fill="none" stroke="var(--acc)" stroke-width="2.5"/>`;
+ $('stage').innerHTML=gridSVG(b,h);
+ let c=0,nx='';for(const[k,d]of p.moves){if(n<c+k){nx=`${c+k-n}${A[d]}`;break}c+=k}
+ if(done)markDone(p.name);
+ $('msg').innerHTML=done?`🎉 “${esc(p.name)}” 완성! <button class="pri" onclick="nextP()">다음 문제 ▶</button>`:`다음 지시: ${nx}`}
+function play(d){const p=all()[S.pi],{steps}=build(p);if(S.n>=steps.length)return;
+ if(steps[S.n]===d){S.n++;upd()}else{const st=$('stage');st.classList.remove('shake');void st.offsetWidth;st.classList.add('shake');
+  $('msg').textContent=`방향이 달라요. 지금은 ${A[steps[S.n]]} 방향이에요.`}}
+function undo(){S.n=Math.max(0,S.n-1);upd()}
+function delP(){const l=load();l.splice(S.pi-BUILT.length,1);store(l);showList()}
+
+function mpos(){const p=M.start.slice();M.steps.forEach(d=>{p[0]+=D[d][0];p[1]+=D[d][1]});return p}
+function showMake(){S.scr='make';M={start:null,steps:[]};
+ app.innerHTML=`<header><button class="ghost" onclick="menu()">← 처음으로</button><h1>문제 만들기</h1></header>
+ <p class="hint">먼저 격자에서 출발점을 누르세요. 그다음 점을 눌러 선을 잇거나, 방향키(대각선: Q E Z C)로 그려요.</p>
+ <div class="card" id="stage"></div><div class="msg" id="msg"></div>
+ <div class="card"><div class="chips" id="chips"></div></div>${padHtml()}
+ <div class="row"><button onclick="mundo()">되돌리기</button><button onclick="showMake()">모두 지우기</button></div>
+ <div class="row"><input type="text" id="nm" placeholder="문제 이름" maxlength="20"><button class="pri" onclick="saveM(false)">저장</button><button onclick="saveM(true)">저장 후 풀어보기</button></div>
+ <div class="row"><button onclick="exTxt()">지시문 복사</button><button onclick="exImg(false)">문제지 이미지</button><button onclick="exImg(true)">정답 포함 이미지</button></div><div id="out"></div>`;updM()}
+function updM(){let h='';for(let x=0;x<=12;x++)for(let y=0;y<=12;y++)h+=`<circle cx="${x*C}" cy="${y*C}" r="2" fill="var(--line)"/>`;
+ if(M.start){const pts=[M.start.slice()];M.steps.forEach(d=>{const l=pts[pts.length-1];pts.push([l[0]+D[d][0],l[1]+D[d][1]])});
+  h+=poly(BOX,pts,'stroke="var(--pen)" stroke-width="3"');
+  h+=`<circle cx="${M.start[0]*C}" cy="${M.start[1]*C}" r="6" fill="var(--red)"/>`;
+  const e=pts[pts.length-1];h+=`<circle cx="${e[0]*C}" cy="${e[1]*C}" r="8" fill="none" stroke="var(--acc)" stroke-width="2.5"/>`}
+ $('stage').innerHTML=gridSVG(BOX,h);$('sv').onclick=clickM;
+ $('chips').innerHTML=M.steps.length?chips(group(M.steps),-1):'<span class="hint">선을 그리면 지시가 여기에 생겨요.</span>';
+ $('msg').textContent=M.start?'':'출발점을 먼저 눌러 주세요.'}
+function clickM(e){const sv=$('sv'),r=sv.getBoundingClientRect(),vb=sv.viewBox.baseVal;
+ const gx=Math.round(((e.clientX-r.left)*vb.width/r.width+vb.x)/C),gy=Math.round(((e.clientY-r.top)*vb.height/r.height+vb.y)/C);
+ if(gx<0||gy<0||gx>12||gy>12)return;
+ if(!M.start){M.start=[gx,gy];return updM()}
+ const p=mpos(),dx=gx-p[0],dy=gy-p[1];if(!dx&&!dy)return;
+ if(dx&&dy&&Math.abs(dx)!==Math.abs(dy)){$('msg').textContent='가로, 세로, 대각선(45°) 방향의 점만 이을 수 있어요.';return}
+ const d=D.findIndex(v=>v[0]===Math.sign(dx)&&v[1]===Math.sign(dy));
+ for(let i=0;i<Math.max(Math.abs(dx),Math.abs(dy));i++)M.steps.push(d);updM()}
+function makeStep(d){if(!M.start){$('msg').textContent='출발점을 먼저 눌러 주세요.';return}
+ const p=mpos(),x=p[0]+D[d][0],y=p[1]+D[d][1];
+ if(x<0||y<0||x>12||y>12){$('msg').textContent='격자 밖이에요.';return}
+ M.steps.push(d);updM()}
+function mundo(){if(M.steps.length)M.steps.pop();else M.start=null;updM()}
+function saveM(go){if(!M.start||!M.steps.length){$('msg').textContent='출발점을 정하고 선을 한 개 이상 그려 주세요.';return}
+ const l=load(),name=$('nm').value.trim()||'내 그림 '+(l.length+1);
+ l.push({name,start:M.start,moves:group(M.steps)});store(l);
+ if(go){S.pi=BUILT.length+l.length-1;showPlay()}else $('msg').textContent=`“${name}” 저장 완료. 따라그리기 목록에서 풀 수 있어요.`}
+
+const say=t=>{const m=$('msg');if(m)m.textContent=t};
+function instrText(){return `출발점: 가로 ${M.start[0]}, 세로 ${M.start[1]}
+`+group(M.steps).map(([k,d])=>k+A[d]).join(' ')}
+async function exTxt(){if(!M.start||!M.steps.length)return say('먼저 문제를 그려 주세요.');
+ const t=instrText();$('out').innerHTML='<textarea id="ta" readonly></textarea><p class="hint" id="cm"></p>';const ta=$('ta');ta.value=t;ta.select();
+ let ok=false;try{await navigator.clipboard.writeText(t);ok=true}catch(e){try{ok=document.execCommand('copy')}catch(_){}}
+ $('cm').textContent=ok?'복사했어요. 원하는 곳에 붙여넣으세요.':'자동 복사가 막혀 있어요. 위 글을 직접 선택해서 복사해 주세요.'}
+function sheet(title,start,moves,ans){const pts=build({start,moves}).pts,b=bounds(pts),cs=36,cols=b.x1-b.x0,rows=b.y1-b.y0,W=Math.max(cols*cs+40,520),per=Math.floor((W-40)/90),lines=Math.ceil(moves.length/per),oy=66+lines*34,H=oy+rows*cs+20,ox=(W-cols*cs)/2;
+ const c=document.createElement('canvas');c.width=W;c.height=H;const g=c.getContext('2d');
+ g.fillStyle='#fff';g.fillRect(0,0,W,H);g.fillStyle='#1c2538';g.textAlign='center';g.font='bold 24px sans-serif';g.fillText(title,W/2,36);
+ g.textAlign='left';g.font='20px sans-serif';moves.forEach(([k,d],i)=>g.fillText(k+A[d],20+(i%per)*90,76+Math.floor(i/per)*34));
+ g.strokeStyle='#a9c4ea';g.lineWidth=1;
+ for(let i=0;i<=cols;i++){g.beginPath();g.moveTo(ox+i*cs,oy);g.lineTo(ox+i*cs,oy+rows*cs);g.stroke()}
+ for(let i=0;i<=rows;i++){g.beginPath();g.moveTo(ox,oy+i*cs);g.lineTo(ox+cols*cs,oy+i*cs);g.stroke()}
+ const X=q=>ox+(q[0]-b.x0)*cs,Y=q=>oy+(q[1]-b.y0)*cs;
+ if(ans){g.strokeStyle='#1c2538';g.lineWidth=4;g.lineCap='round';g.lineJoin='round';g.beginPath();pts.forEach((q,i)=>i?g.lineTo(X(q),Y(q)):g.moveTo(X(q),Y(q)));g.stroke()}
+ g.fillStyle='#e5334b';g.beginPath();g.arc(X(pts[0]),Y(pts[0]),7,0,7);g.fill();return c}
+async function dl(b,fn){try{if(window.claude&&claude.use){const d=await claude.use('downloads');if(d){await d.save({filename:fn,data:b});return}}
+ const u=URL.createObjectURL(b),a=document.createElement('a');a.href=u;a.download=fn;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),3000)}catch(e){if(!e||e.code!=='declined')say('바로 저장할 수 없어요. 이미지를 길게 누르거나 오른쪽 클릭해서 저장하세요.')}}
+async function cpImg(b){try{await navigator.clipboard.write([new ClipboardItem({'image/png':b})]);say('이미지를 복사했어요.')}catch(e){say('복사가 막혀 있어요. 이미지를 길게 누르거나 오른쪽 클릭해서 복사하세요.')}}
+function showImg(c,fn){c.toBlob(b=>{$('out').innerHTML=`<img alt="만든 이미지" src="${c.toDataURL()}"><p class="hint">이미지를 길게 누르거나 오른쪽 클릭해도 저장·복사할 수 있어요.</p><div class="row"><button id="dl">이미지 저장</button><button id="cp">이미지 복사</button></div>`;$('dl').onclick=()=>dl(b,fn);$('cp').onclick=()=>cpImg(b)})}
+function exImg(ans){if(!M.start||!M.steps.length)return say('먼저 문제를 그려 주세요.');
+ const nm=$('nm').value.trim()||'화살표 그리기';showImg(sheet(nm,M.start,group(M.steps),ans),nm+(ans?'_정답':'_문제지')+'.png')}
+
+const FC=['pen','#e5334b','#2a62d6','#17925c','#e8a317'],FN=20;
+let F={ops:[],pos:null,down:true,col:'pen'};
+function showFree(){S.scr='free';F={ops:[],pos:null,down:true,col:'pen'};
+ app.innerHTML=`<header><button class="ghost" onclick="menu()">← 처음으로</button><h1>자유 그리기</h1></header>
+ <p class="hint">점을 눌러 시작점을 정하고, 다른 점을 누르면 선이 이어져요. 방향키(대각선 Q E Z C)로 한 칸씩 그려도 돼요. 스페이스바로 펜을 들었다 놓아요.</p>
+ <div class="card"><label class="hint" for="ft">문제 텍스트 붙여넣기 (문제 만들기에서 복사한 지시문)</label><textarea id="ft" placeholder="예) 출발점: 가로 2, 세로 6&#10;4→ 3↑ 2↖ 2↙ 3↓" oninput="fparse()"></textarea><div class="chips" id="fc" style="margin-top:8px"></div></div>
+ <div class="row" id="tools"></div><div class="card" id="stage"></div><div class="msg" id="msg"></div>${padHtml()}
+ <div class="row"><button onclick="fundo()">되돌리기</button><button onclick="fclear()">모두 지우기</button><button class="pri" onclick="fImg()">이미지 만들기</button></div><div id="out"></div>`;fparse();updF()}
+function updF(){const cc=c=>c==='pen'?'var(--pen)':c;
+ $('tools').innerHTML=`<button onclick="F.down=!F.down;updF()">${F.down?'✏️ 펜 내림 (그리는 중)':'🖐 펜 듦 (이동만)'}</button>`+FC.map(c=>`<button class="sw ${F.col===c?'on':''}" style="background:${cc(c)}" onclick="F.col='${c}';updF()" aria-label="색 선택"></button>`).join('');
+ let h='';for(let x=0;x<=FN;x++)for(let y=0;y<=FN;y++)h+=`<circle cx="${x*C}" cy="${y*C}" r="1.8" fill="var(--line)"/>`;
+ F.ops.forEach(o=>{if(o.draw)h+=`<line x1="${o.from[0]*C}" y1="${o.from[1]*C}" x2="${o.to[0]*C}" y2="${o.to[1]*C}" stroke="${cc(o.col)}" stroke-width="3.5" stroke-linecap="round"/>`});
+ if(F.pos)h+=`<circle cx="${F.pos[0]*C}" cy="${F.pos[1]*C}" r="8" fill="none" stroke="${F.down?'var(--acc)':'var(--red)'}" stroke-width="2.5"/>`;
+ $('stage').innerHTML=gridSVG({x0:0,y0:0,x1:FN,y1:FN},h);$('sv').onclick=clickF;
+ say(F.pos?(F.down?'':'펜을 든 상태예요. 이동만 하고 선은 그려지지 않아요.'):'시작할 점을 누르거나 방향키를 눌러 보세요.')}
+function clickF(e){const sv=$('sv'),r=sv.getBoundingClientRect(),vb=sv.viewBox.baseVal;
+ const gx=Math.round(((e.clientX-r.left)*vb.width/r.width+vb.x)/C),gy=Math.round(((e.clientY-r.top)*vb.height/r.height+vb.y)/C);
+ if(gx<0||gy<0||gx>FN||gy>FN)return;fgo([gx,gy])}
+function fgo(t){if(!F.pos){F.pos=t;return updF()}
+ if(t[0]===F.pos[0]&&t[1]===F.pos[1])return;
+ F.ops.push({from:F.pos,to:t,col:F.col,draw:F.down});F.pos=t;updF()}
+function freeStep(d){if(!F.pos){F.pos=[FN/2,FN/2];return updF()}
+ const t=[F.pos[0]+D[d][0],F.pos[1]+D[d][1]];if(t[0]<0||t[1]<0||t[0]>FN||t[1]>FN)return;fgo(t)}
+let FP={start:null,moves:[]};
+function fparse(){const t=$('ft').value,m=t.match(/가로\s*(\d+)\s*,?\s*세로\s*(\d+)/),
+ mv=[...t.matchAll(/(\d+)\s*([→↘↓↙←↖↑↗])/g)].map(a=>[+a[1],A.indexOf(a[2])]);
+ FP={start:m?[+m[1],+m[2]]:null,moves:mv};
+ $('fc').innerHTML=(mv.length?chips(mv,-1):'<span class="hint">붙여넣은 지시문이 여기에 칸별로 정리돼요.</span>')+(FP.start?`<button onclick="fstart()">출발점에 놓기</button>`:'')}
+function fstart(){if(!FP.start)return;F.pos=FP.start.slice();F.down=true;updF()}
+function fclear(){F.ops=[];F.pos=null;updF()}
+function fundo(){const o=F.ops.pop();F.pos=o?o.from:null;updF()}
+function fImg(){const cs=30,c=document.createElement('canvas');c.width=c.height=FN*cs+40;const g=c.getContext('2d');
+ g.fillStyle='#fff';g.fillRect(0,0,c.width,c.height);g.translate(20,20);g.strokeStyle='#c4d6ee';g.lineWidth=1;
+ for(let i=0;i<=FN;i++){g.beginPath();g.moveTo(i*cs,0);g.lineTo(i*cs,FN*cs);g.moveTo(0,i*cs);g.lineTo(FN*cs,i*cs);g.stroke()}
+ g.lineWidth=4;g.lineCap='round';F.ops.forEach(o=>{if(!o.draw)return;g.strokeStyle=o.col==='pen'?'#1c2538':o.col;g.beginPath();g.moveTo(o.from[0]*cs,o.from[1]*cs);g.lineTo(o.to[0]*cs,o.to[1]*cs);g.stroke()});
+ showImg(c,'자유그림.png')}
+
+function go(d){if(S.scr==='play')play(d);else if(S.scr==='make')makeStep(d);else if(S.scr==='free')freeStep(d)}
+let pend=null,pt=0;
+const fire=v=>go(D.findIndex(d=>d[0]===v[0]&&d[1]===v[1]));
+addEventListener('keydown',e=>{
+ if(/INPUT|SELECT|TEXTAREA/.test(e.target.tagName)||S.scr==='menu'||S.scr==='list')return;
+ if(e.key==='Backspace'){e.preventDefault();S.scr==='play'?undo():S.scr==='free'?fundo():mundo();return}
+ if(e.key===' '&&S.scr==='free'){e.preventDefault();F.down=!F.down;updF();return}
+ const dg={q:[-1,-1],e:[1,-1],z:[-1,1],c:[1,1]}[e.key.toLowerCase()];
+ if(dg){fire(dg);return}
+ const m={ArrowRight:[1,0],ArrowLeft:[-1,0],ArrowDown:[0,1],ArrowUp:[0,-1]}[e.key];
+ if(!m)return;e.preventDefault();
+ if(pend){clearTimeout(pt);const p=pend;pend=null;
+  if((p[0]&&m[1])||(p[1]&&m[0])){fire([p[0]+m[0],p[1]+m[1]]);return}
+  fire(p)}
+ pend=m;pt=setTimeout(()=>{const p=pend;pend=null;if(p)fire(p)},70)});
+menu();
+</script></body></html>
